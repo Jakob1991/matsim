@@ -59,6 +59,7 @@ public class PatnaSimulationTimeWriter {
 	private static String inputFilesDir = runDir+"/inputs/";
 	
 	private static String linkDynamics_CSV = "FIFO,PassingQ,SeepageQ"; 
+	private static String trafficDynamics_CSV = "queue,withHoles"; 
 	
 	private static int cloningFactor = 1;
 	private static PrintStream writer;
@@ -74,6 +75,7 @@ public class PatnaSimulationTimeWriter {
 			inputFilesDir = args[1];
 			cloningFactor = Integer.valueOf( args[2] );
 			linkDynamics_CSV = args[3]; // for 100% scenario, all cases (72) cant be simulated only in one job
+			trafficDynamics_CSV = args[4];
 		}
 
 		PatnaSimulationTimeWriter pstw = new PatnaSimulationTimeWriter();
@@ -89,12 +91,13 @@ public class PatnaSimulationTimeWriter {
 		writer.print("scenario \t simTimeInSec \n");
 
 		List<String> lds  = Arrays.asList( linkDynamics_CSV.split(",") );
+		List<String> tds = Arrays.asList(trafficDynamics_CSV.split(","));
 		
 		for (String ldString : lds ) {
 			LinkDynamics ld = LinkDynamics.valueOf(ldString);
-			for ( TrafficDynamics td : TrafficDynamics.values()){
-				writer.print(ld+"_"+td+"\t");
-				pstw.processAndWriteSimulationTime(ld, td);
+			for ( String tdString : tds){
+				writer.print(ld+"_"+tdString+"\t");
+				pstw.processAndWriteSimulationTime(ld, TrafficDynamics.valueOf(tdString));
 				writer.println();	
 			}
 		}
@@ -108,6 +111,7 @@ public class PatnaSimulationTimeWriter {
 
 	private void processAndWriteSimulationTime (LinkDynamics ld, TrafficDynamics td) {
 		for (int i = 0; i<randomSeeds.length;i++) {
+			if(cloningFactor==100 && i>5) continue; // skipping a few iterations for 100pct scenario.
 			int randomSeed = randomSeeds[i];
 			MatsimRandom.reset(randomSeed);
 			double startTime = System.currentTimeMillis();
